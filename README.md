@@ -8,4 +8,6 @@ df -x -m (pre and prostats); df -A -m (pre and prostats); sysstat_x_1sec ; sysst
 
 ## Clean Data
 
-The data is composed of 32 files, 16 files per NetApp controller. Each files are plain text output from the iterations in time for a day.  
+The data is composed of 32 files, 16 files per NetApp controller. Each files are plain text output from the iterations in time for a day.
+
+## Descriptive Analysis
