@@ -7395,9 +7395,7 @@ Filesystem               total       used      avail capacity  Mounted on
 /vol/vs1_cumulus_clus2/  6606028MB  4787076MB  1818952MB      72%  /vol/vs1_cumulus_clus2/
 /vol/vs1_getxsxd/    2988441MB  1778910MB  1209531MB      60%  /vol/vs1_getxsxd/
 /vol/vs1_cumulus_clus1_2/  1494220MB  1017954MB   124038MB      92%  /vol/vs1_cumulus_clus1_2/
-/vol/vs1_cumulus_clus2_2/  1494220MB  1434793MB    59426MB
-
-96%  /vol/vs1_cumulus_clus2_2/
+/vol/vs1_cumulus_clus2_2/  1494220MB  1434793MB    59426MB      96%  /vol/vs1_cumulus_clus2_2/
 /vol/vs1_cumulus_clus4_2/  1494220MB  1088623MB   124083MB      92%  /vol/vs1_cumulus_clus4_2/
 /vol/vs1_cumulus_clus5_2/  1494220MB  1255776MB   124118MB      92%  /vol/vs1_cumulus_clus5_2/
 /vol/vs1_cumulus_clus3_2/  1992294MB   919334MB   124110MB      94%  /vol/vs1_cumulus_clus3_2/
