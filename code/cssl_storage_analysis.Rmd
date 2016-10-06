@@ -1,0 +1,173 @@
+---
+title: "Storage Capacity Analysis"
+author: "Nicolas Genibre"
+date: "September 26, 2016"
+output:
+  word_document: default
+  pdf_document:
+    fig_caption: yes
+    fig_height: 4
+    fig_width: 6
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+What is the Storage Capacity looks like for the NetApp cluster in Fort Lauderdale Laboratory?
+
+For this Analysis we implemented the NetApp Perfstat tool to run on a schedule, for 16 days, and captured 48 iterations of 15 minutes each day using the following to determine capacity:
+
+df -x -m (pre and prostats); df -A -m (pre and prostats); sysstat_x_1sec ; sysstat_x_5sec
+
+## Clean Data
+
+The raw data is composed of 32 files, 16 files per NetApp controller. Each files are plain text output containing the iterations for a day.  
+
+We're cleaning the data with the help of shell scripts to transform the data into a csv type file:
+
+aggr.sh; vol.sh and the result is in the data directory as aggr.csv and vol.csv
+
+```{r}
+myaggr <- read.csv("../data/aggr.csv")
+
+myvol <- read.csv("../data/vol.csv")
+```
+
+The **Time** is expressed in epoch date. There are two **Filers** in the Cluster.
+
+**Total**, **Used** and **Free** capacity are measurements in MB. The **Ratio** is the expression in percentage of Used versus Total.
+
+
+## Aggregate
+
+```{r message=FALSE}
+
+library(dplyr)
+library(ggplot2)
+
+```
+
+```{r }
+
+head(myaggr)
+
+```
+
+```{r echo=FALSE}
+
+myaggr$Total <- myaggr$Total / 1024
+myaggr$Used <- myaggr$Used / 1024
+myaggr$Time <- as.POSIXct(myaggr$Time, origin="1970-01-01")
+
+myaggrf1 <- filter(myaggr, Filer == "netapp-01")
+myaggrf2 <- filter(myaggr, Filer == "netapp-02")
+
+myaggr0f1 <- filter(myaggr, Aggregate == "n1_aggr0")
+myaggr1f1 <- filter(myaggr, Aggregate == "n1_aggr1")
+myaggr2f1 <- filter(myaggr, Aggregate == "n1_aggr2")
+myaggr0f2 <- filter(myaggr, Aggregate == "n2_aggr0")
+myaggr1f2 <- filter(myaggr, Aggregate == "n2_aggr1")
+
+```
+
+```{r echo=FALSE}
+
+p <- ggplot(myaggr, aes(Time)) + geom_line(aes(y = Used, colour = Aggregate)) + geom_line(aes(y = mean(myaggr1f1$Total), colour = "Total n1_aggr1")) + geom_line(aes(y = mean(myaggr2f1$Total), colour = "Total n1_aggr2")) + geom_line(aes(y = mean(myaggr1f2$Total), colour = "Total n2_aggr1")) 
+
+p + labs(title = "Aggregate Usage") + labs(x = "Time", y = "Size (GB)") + labs(colour="") + scale_color_manual(values=c("n1_aggr0"="#99d8c9", "n1_aggr1"="#de2d26", "n1_aggr2"="#d95f0e", "n2_aggr0"="#99d8c9", "n2_aggr1"="#756bb1", "Total n1_aggr1"="#de2d26", "Total n1_aggr2"="#d95f0e", "Total n2_aggr1"="#756bb1"))
+
+```
+
+The Aggregate' used capacity has not change much from the beginning to the end of the data collection.
+
+According the linear model we see a slight decrease of Aggregate 1 and increase of Aggregate 2 on Filer 1 over time. On Filer 2 the increase is larger for the Arggregate 2.
+
+```{r echo=FALSE}
+
+g <- ggplot(myaggr, aes(Time, Used))
+
+#g + geom_line(aes(colour = Aggregate)) + labs(title = "Aggregate Usage") + labs(x = "Time", y = "Size (GB)") + facet_grid( . ~ Filer)
+
+g + geom_smooth(aes(colour = Aggregate), method = "lm") + labs(title = "Aggregate Linear Model Usage") + labs(x = "Time", y = "Size (GB)") + facet_grid( . ~ Filer)
+
+g <- ggplot(myaggr, aes(Time, UsageRatio))
+
+g + geom_line(aes(colour = Aggregate)) + labs(title = "Usage Ratio") + labs(x = "Time", y = "%") + facet_grid( . ~ Filer)
+```
+
+Aggregates are kept under the 85% threshold. During the collection we can see that one of the Aggregate on Filer 1 was increased.
+
+
+## Volume
+
+
+
+```{r echo=FALSE}
+
+myvol$Total <- myvol$Total / 1024
+#myvol$Used <- as.numeric(as.character(myvol$Used)) 
+myvol$Used <- myvol$Used / 1024
+myvol$Time <- as.POSIXct(myvol$Time, origin="1970-01-01")
+myvolf1 <- filter(myvol, Filer == "netapp-01")
+myvolf2 <- filter(myvol, Filer == "netapp-02")
+
+```
+
+
+```{r echo=FALSE}
+
+g <- ggplot(myvolf1, aes(Time, Used))
+
+g + geom_line(aes(colour = Volume)) + labs(title = "Volume Usage") + labs(x = "Time", y = "Size (GB)") + facet_grid( . ~ Filer) + theme(legend.position="bottom") + theme(legend.title=element_blank()) + theme(legend.text = element_text(size=5))
+
+g <- ggplot(myvolf2, aes(Time, Used))
+
+g + geom_line(aes(colour = Volume)) + labs(title = "Volume Usage") + labs(x = "Time", y = "Size (GB)")  + facet_grid( . ~ Filer) + theme(legend.position="bottom") + theme(legend.title=element_blank()) + theme(legend.text = element_text(size=7))
+
+
+```
+
+The top 5 volumes using the most capacity, and that are the most active, are the Cumulus volume, as we expected.
+
+```{r echo=FALSE}
+
+g <- ggplot(myvolf1, aes(Time, Used))
+
+
+g + geom_smooth(aes(colour = Volume), method = "lm") + labs(title = "Volume Linear Model Usage") + labs(x = "Time", y = "Size (GB)") + facet_grid( . ~ Filer) + theme(legend.position="bottom") + theme(legend.title=element_blank()) + theme(legend.text = element_text(size=5))
+
+g <- ggplot(myvolf2, aes(Time, Used))
+
+
+g + geom_smooth(aes(colour = Volume), method = "lm") + labs(title = "Volume Linear Model Usage") + labs(x = "Time", y = "Size (GB)") + facet_grid( . ~ Filer) + theme(legend.position="bottom") + theme(legend.title=element_blank()) + theme(legend.text = element_text(size=7))
+
+
+```
+
+According the Model one volume, vs1_cumulus_clus3, has shown the biggest increase during its activity 
+
+```{r echo=FALSE}
+
+g <- ggplot(myvol, aes(Time, UsageRatio))
+
+g + geom_line(aes(colour = Volume)) + labs(title = "Usage Ratio") + labs(x = "Time", y = "%") + theme(legend.position='none')
+
+```
+
+The volumes vs1_labvdi2, vs1_ftlvmw1, vs1_xspool3, vs1_ftlvm2_vol are above the 85% threshold and that happens during the all period of the data collection.
+
+```{r echo=FALSE}
+
+#myvol$Time <- as.Date(as.character(myvol$Time), "%Y-%m-%d")
+
+#head(myvol)
+
+#voldaymean <- aggregate(Used ~ Time, myvol, mean)
+
+#hist(voldaymean$Used, main="Average Space Used per Day", xlab="Size (GB) / Day", col="blue")
+
+
+```

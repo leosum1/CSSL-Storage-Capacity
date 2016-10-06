@@ -33,6 +33,6 @@ for i in `ls | grep 53`; do
 done
 
 # Move out clean data from raw directory 
-cat aggr.data | sed  -n -e 's/,.$/ /p' > ../aggr.data
-dos2unix ../aggr.data
+cat aggr.data | sed  -n -e 's/,.$/ /p' > ../aggr.csv
+dos2unix ../aggr.csv
 rm -rf aggr.data
