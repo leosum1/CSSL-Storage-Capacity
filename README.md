@@ -10,9 +10,7 @@ Look at the Markdown in the code directory for the complete analysis.
 
 
 
-<<<<<<< HEAD
 =======
 The data is composed of 32 files, 16 files per NetApp controller. Each files are plain text output from the iterations in time for a day.
 
 ## Descriptive Analysis
->>>>>>> origin/master
